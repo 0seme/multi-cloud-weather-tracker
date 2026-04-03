@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --aws:#0078d4;
+  --aws-dim:#005fa3;
+  --bg:#07090f;
+  --surface:#0e1118;
+  --surface2:#141820;
+  --border:#1e2433;
+  --text:#f0f4ff;
+  --muted:#5a6480;
+  --sub:#8892b0;
+}
+body{
+  min-height:100vh;
+  background:var(--bg);
+  font-family:'DM Sans',sans-serif;
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:2rem 1rem 4rem;
+  position:relative;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;
+  top:-200px;left:50%;
+  transform:translateX(-50%);
+  width:600px;height:400px;
+  background:radial-gradient(ellipse,rgba(0,120,212,0.07) 0%,transparent 70%);
+  pointer-events:none;
+}
+.logo{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:2.5rem;
+}
+.logo-dot{
+  width:10px;height:10px;
+  border-radius:50%;
+  background:var(--aws);
+  box-shadow:0 0 12px rgba(0,120,212,0.6);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(0.85)}}
+.logo-text{
+  font-family:'DM Mono',monospace;
+  font-size:0.75rem;
+  letter-spacing:0.2em;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+.search-wrap{
+  width:100%;max-width:440px;
+  position:relative;
+  margin-bottom:1rem;
+}
+.search-wrap input{
+  width:100%;
+  padding:1rem 1.25rem;
+  padding-right:6rem;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-size:1rem;
+  outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.search-wrap input:focus{
+  border-color:rgba(0,120,212,0.4);
+  box-shadow:0 0 0 3px rgba(0,120,212,0.08);
+}
+.search-wrap input::placeholder{color:var(--muted)}
+.search-wrap button{
+  position:absolute;right:8px;top:50%;
+  transform:translateY(-50%);
+  padding:0.5rem 1rem;
+  background:var(--aws);
+  color:#fff;
+  border:none;border-radius:9px;
+  font-family:'DM Sans',sans-serif;
+  font-size:0.875rem;font-weight:600;
+  cursor:pointer;
+  transition:background 0.15s,transform 0.1s;
+  letter-spacing:0.01em;
+}
+.search-wrap button:hover{background:#1a8fe0}
+.search-wrap button:active{transform:translateY(-50%) scale(0.96)}
+.error{
+  min-height:1.4rem;
+  font-size:0.85rem;
+  color:#ff6b6b;
+  text-align:center;
+  margin-bottom:0.5rem;
+  font-family:'DM Mono',monospace;
+}
+.card{
+  width:100%;max-width:440px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+  display:none;
+  opacity:0;
+  transform:translateY(12px);
+  transition:opacity 0.35s ease,transform 0.35s ease;
+}
+.card.visible{display:block}
+.card.shown{opacity:1;transform:translateY(0)}
+.card-top{
+  padding:2rem 2rem 1.5rem;
+  position:relative;
+  border-bottom:1px solid var(--border);
+}
+.card-top::after{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--aws),transparent);
+}
+.location-row{
+  display:flex;align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:1.25rem;
+}
+.city{font-size:1.5rem;font-weight:600;line-height:1.2;color:var(--text)}
+.country{
+  font-family:'DM Mono',monospace;
+  font-size:0.75rem;color:var(--muted);
+  margin-top:3px;letter-spacing:0.1em;
+}
+.weather-icon{width:72px;height:72px;filter:drop-shadow(0 0 16px rgba(0,120,212,0.3))}
+.temp-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:0.25rem}
+.temp{font-size:4rem;font-weight:300;line-height:1;color:var(--text);letter-spacing:-2px}
+.temp-unit{font-size:1.25rem;color:var(--muted);margin-bottom:8px}
+.desc{font-size:0.9rem;color:var(--sub);text-transform:capitalize;letter-spacing:0.02em}
+.card-bottom{
+  display:grid;grid-template-columns:repeat(3,1fr);
+}
+.stat{
+  padding:1.25rem 0;
+  display:flex;flex-direction:column;
+  align-items:center;gap:5px;
+  border-right:1px solid var(--border);
+  transition:background 0.15s;
+}
+.stat:last-child{border-right:none}
+.stat:hover{background:var(--surface2)}
+.stat-label{
+  font-size:0.65rem;
+  font-family:'DM Mono',monospace;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:0.12em;
+}
+.stat-val{font-size:1rem;font-weight:500;color:var(--text)}
+.banner{
+  position:fixed;bottom:0;left:0;width:100%;
+  background:#0078d4;
+  color:#fff;
+  text-align:center;
+  padding:0.45rem 1rem;
+  font-family:'DM Mono',monospace;
+  font-size:0.72rem;
+  font-weight:500;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+<div class="logo">
+  <div class="logo-dot"></div>
+  <span class="logo-text">Koko's Weather Tracker</span>
+</div>
+<div class="search-wrap">
+  <input type="text" id="cityInput" placeholder="Enter city name..." autocomplete="off"/>
+  <button onclick="getWeather()">Search</button>
+</div>
+<div class="error" id="errorMsg"></div>
+<div class="card" id="weatherCard">
+  <div class="card-top">
+    <div class="location-row">
+      <div>
+        <div class="city" id="cityDisplay"></div>
+        <div class="country" id="countryDisplay"></div>
+      </div>
+      <img class="weather-icon" id="weatherIcon" src="" alt=""/>
+    </div>
+    <div class="temp-row">
+      <span class="temp" id="tempValue"></span>
+      <span class="temp-unit">°C</span>
+    </div>
+    <div class="desc" id="weatherDesc"></div>
+  </div>
+  <div class="card-bottom">
+    <div class="stat">
+      <span class="stat-label">Humidity</span>
+      <span class="stat-val" id="humidity"></span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Wind</span>
+      <span class="stat-val" id="windSpeed"></span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Feels Like</span>
+      <span class="stat-val" id="feelsLike"></span>
+    </div>
+  </div>
+</div>
+<div class="banner">⬡ Served from: Azure Blob Storage (Failover)</div>
+<script>
+const API_KEY = 'your_api_key_here';
+const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather';
+const cityInput = document.getElementById('cityInput');
+cityInput.addEventListener('keydown', e => { if(e.key==='Enter') getWeather(); });
+async function getWeather(){
+  const city = cityInput.value.trim();
+  if(!city) return;
+  document.getElementById('errorMsg').textContent='';
+  const card = document.getElementById('weatherCard');
+  card.classList.remove('shown');
+  try{
+    const res = await fetch(`${BASE_URL}?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`);
+    if(!res.ok){
+      if(res.status===404) throw new Error('City not found.');
+      if(res.status===401) throw new Error('Invalid API key.');
+      throw new Error('Could not fetch weather.');
+    }
+    const data = await res.json();
+    document.getElementById('cityDisplay').textContent = data.name;
+    document.getElementById('countryDisplay').textContent = data.sys.country;
+    document.getElementById('weatherDesc').textContent = data.weather[0].description;
+    document.getElementById('tempValue').textContent = Math.round(data.main.temp);
+    document.getElementById('humidity').textContent = data.main.humidity+'%';
+    document.getElementById('windSpeed').textContent = (data.wind.speed*3.6).toFixed(1)+' km/h';
+    document.getElementById('feelsLike').textContent = Math.round(data.main.feels_like)+'°C';
+    document.getElementById('weatherIcon').src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+    card.classList.add('visible');
+    setTimeout(()=>card.classList.add('shown'),10);
+  }catch(err){
+    document.getElementById('errorMsg').textContent = err.message;
+  }
+}
+</script>
+</body>
+</html>
