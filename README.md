@@ -6,21 +6,23 @@
 ![DNS](https://img.shields.io/badge/Route53-Failover%20Routing-FF9900?logo=amazonaws)
 ![Status](https://img.shields.io/badge/Infra-Deployed%20%26%20Torn%20Down-brightgreen)
 
-A production-grade Infrastructure as Code project that deploys a live weather 
-application across AWS and Azure simultaneously, with automated DNS failover and 
+A production-grade Infrastructure as Code project that deploys a live weather
+application across AWS and Azure simultaneously, with automated DNS failover and
 disaster recovery — all provisioned and destroyed with a single Terraform command.
+
+![Terraform Dependency Graph](assets/architecture-graph.png)
 
 ---
 
 ## What This Project Does
 
-A weather tracking app is deployed to two cloud providers at once. AWS S3 serves 
-as the primary host. Azure Blob Storage serves as the disaster recovery site. 
-Route 53 monitors the primary endpoint every 30 seconds and automatically 
-reroutes all traffic to Azure within 90 seconds of detecting a failure — with 
+A weather tracking app is deployed to two cloud providers at once. AWS S3 serves
+as the primary host. Azure Blob Storage serves as the disaster recovery site.
+Route 53 monitors the primary endpoint every 30 seconds and automatically
+reroutes all traffic to Azure within 90 seconds of detecting a failure — with
 zero manual intervention.
 
-Each environment displays a distinct banner confirming which cloud is actively 
+Each environment displays a distinct banner confirming which cloud is actively
 serving traffic, making failover events visually verifiable in real time.
 
 ---
@@ -45,6 +47,8 @@ Failure threshold: 3 consecutive failures
 Checker regions: 8 global locations
 
 Terraform manages all resources across both clouds in a single apply.
+
+![Route 53 Hosted Zone showing Primary and Secondary failover records](assets/Failover.png)
 
 ---
 
@@ -97,13 +101,13 @@ multi-cloud-weather-tracker/
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/multi-cloud-weather-tracker.git
+git clone https://github.com/0seme/multi-cloud-weather-tracker.git
 cd multi-cloud-weather-tracker
 ```
 
 ### 2. Create your variable file
 
-Create `terraform/terraform.tfvars` — this file is gitignored and must never 
+Create `terraform/terraform.tfvars` — this file is gitignored and must never
 be committed:
 ```hcl
 aws_region                 = "us-east-1"
@@ -116,7 +120,7 @@ weather_api_key            = "your_openweathermap_key"
 ```
 
 > The S3 bucket name must exactly match the `www.` subdomain of your domain.
-> This is a hard requirement of S3 static website hosting when accessed via 
+> This is a hard requirement of S3 static website hosting when accessed via
 > a CNAME record — AWS matches the incoming hostname against the bucket name.
 
 ### 3. Add your API key to the app files
@@ -140,8 +144,10 @@ terraform plan -var-file="terraform.tfvars"
 terraform apply -var-file="terraform.tfvars"
 ```
 
-Terraform provisions all 11 resources across both clouds in a single apply. 
+Terraform provisions all 11 resources across both clouds in a single apply.
 Azure storage account creation is the longest step at roughly 2 minutes.
+
+![Terraform apply complete with outputs across both clouds](assets/Terraform-apply.png)
 
 ### 6. Verify your endpoints
 
@@ -149,7 +155,10 @@ After apply, three URLs should all serve the weather app:
 
 - **AWS direct:** output as `aws_s3_website_url`
 - **Azure direct:** output as `azure_blob_website_url`
-- **Custom domain:** `http://www.your-domain.com`
+- **Custom domain:** `http://www.koko-devops.website`
+
+![Weather app live on AWS S3 primary endpoint](assets/Testing-aws-live.png)
+![Weather app live on Azure Blob DR endpoint](assets/Testing-azure-live.png)
 
 ---
 
@@ -162,7 +171,10 @@ After apply, three URLs should all serve the weather app:
 3. The S3 endpoint immediately starts returning 403 errors
 4. Route 53 health check flips to Unhealthy within 90 seconds
 5. DNS resolution automatically switches to the Azure secondary record
-6. Visit `www.your-domain.com` — the blue Azure banner confirms failover
+6. Visit `www.koko-devops.website` — the blue Azure banner confirms failover
+
+![Route 53 health check flipping to Unhealthy after S3 failure](./assets/Unhealthy.png)
+![Azure DR site serving live traffic while custom domain reroutes](./assets/Azure-test-final.png)
 
 ### Restore primary
 
@@ -175,27 +187,27 @@ After apply, three URLs should all serve the weather app:
 ## Engineering Decisions Worth Noting
 
 **Why the S3 bucket is named after the www subdomain**
-When a CNAME points a custom hostname at an S3 website endpoint, AWS matches 
-the incoming hostname against the bucket name. The bucket must be named 
+When a CNAME points a custom hostname at an S3 website endpoint, AWS matches
+the incoming hostname against the bucket name. The bucket must be named
 `www.your-domain.com` exactly — otherwise S3 returns a NoSuchBucket error.
 
 **Why both records are CNAME and not alias**
-Route 53 alias records only support AWS-native targets like CloudFront and ELB. 
-Because the secondary record points to Azure, both records are standard CNAMEs 
+Route 53 alias records only support AWS-native targets like CloudFront and ELB.
+Because the secondary record points to Azure, both records are standard CNAMEs
 with a 60-second TTL, which is fully compatible with Route 53 failover policy.
 
 **Why force_destroy is set on the S3 bucket**
-Terraform cannot destroy a non-empty bucket. Since all bucket contents are 
-managed as Terraform resources, force_destroy is safe and ensures a clean 
+Terraform cannot destroy a non-empty bucket. Since all bucket contents are
+managed as Terraform resources, force_destroy is safe and ensures a clean
 single-command teardown.
 
 **Azure Front Door limitation on free tier**
-Azure Front Door Standard would allow the failover to serve traffic on the 
-same custom domain, making the switch fully transparent at the DNS level. 
-Azure blocks both Front Door and CDN Classic on free trial accounts. In a 
-paid production environment this would be resolved with an 
-`azurerm_cdn_frontdoor_profile` resource and a custom domain association, 
-with the Route 53 secondary record updated to point at the Front Door 
+Azure Front Door Standard would allow the failover to serve traffic on the
+same custom domain, making the switch fully transparent at the DNS level.
+Azure blocks both Front Door and CDN Classic on free trial accounts. In a
+paid production environment this would be resolved with an
+`azurerm_cdn_frontdoor_profile` resource and a custom domain association,
+with the Route 53 secondary record updated to point at the Front Door
 endpoint hostname.
 
 ---
@@ -203,15 +215,15 @@ endpoint hostname.
 ## Challenges Encountered
 
 **WSL2 IPv6 routing to Azure APIs**
-The Azure Resource Manager API occasionally returns IPv6 addresses. WSL2 
-does not always handle IPv6 routing correctly, which caused intermittent 
-connection resets mid-apply. Resolved by temporarily disabling IPv6 at the 
+The Azure Resource Manager API occasionally returns IPv6 addresses. WSL2
+does not always handle IPv6 routing correctly, which caused intermittent
+connection resets mid-apply. Resolved by temporarily disabling IPv6 at the
 WSL2 kernel level before running apply.
 
 **DNS apex CNAME restriction**
-Standard DNS does not allow CNAME records at a domain apex. Creating a CNAME 
-at `koko-devops.website` directly would be rejected. The correct approach is 
-routing through `www.koko-devops.website`, which is also standard practice 
+Standard DNS does not allow CNAME records at a domain apex. Creating a CNAME
+at `koko-devops.website` directly would be rejected. The correct approach is
+routing through `www.koko-devops.website`, which is also standard practice
 for web-facing domains.
 
 ---
@@ -228,6 +240,8 @@ Type `yes` when prompted. All 11 resources are destroyed. Verify manually:
 - AWS Console → Route 53 → Health Checks: list is empty
 - AWS Console → Route 53 → Hosted Zone: only NS and SOA records remain
 - Azure Portal → Resource Groups: `koko-weather-rg` is gone
+
+![Terraform destroy complete — all 11 resources removed](./assets/Terraform-destroy.png)
 
 ---
 
