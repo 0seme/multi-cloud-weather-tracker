@@ -56,7 +56,7 @@ Terraform manages all resources across both clouds in a single apply.
 
 | Layer | Technology |
 |---|---|
-| Infrastructure as Code | Terraform with AWS (~> 5.0) and AzureRM (~> 3.0) providers |
+| Infrastructure as Code | Terraform — AWS provider 5.0+, AzureRM provider 3.0+ |
 | Primary Cloud | AWS S3 (static website hosting) + Route 53 |
 | Disaster Recovery | Azure Blob Storage (static website) |
 | DNS & Failover | Route 53 failover routing policy + health checks |
@@ -68,6 +68,7 @@ Terraform manages all resources across both clouds in a single apply.
 ---
 
 ## Project Structure
+```text
 multi-cloud-weather-tracker/
 ├── app/
 │   ├── index.html              # Primary site — AWS orange banner
@@ -82,7 +83,7 @@ multi-cloud-weather-tracker/
 │   └── terraform.tfvars        # Variable values — gitignored, never committed
 ├── .gitignore
 └── README.md
-
+```
 ---
 
 ## Prerequisites
